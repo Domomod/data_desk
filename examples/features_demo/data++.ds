@@ -1,0 +1,6 @@
+
+Circle :: class
+{
+	x : float;
+	z : int;
+};

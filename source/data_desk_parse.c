@@ -788,6 +788,7 @@ ParseExpression(ParseContext *context, Tokenizer *tokenizer)
 }
 
 static DataDeskNode *ParseDeclarationBody     (ParseContext *context, Tokenizer *tokenizer, Token name);
+static DataDeskNode *ParseClassBody           (ParseContext *context, Tokenizer *tokenizer, Token name);
 static DataDeskNode *ParseStructBody          (ParseContext *context, Tokenizer *tokenizer, Token name);
 static DataDeskNode *ParseUnionBody           (ParseContext *context, Tokenizer *tokenizer, Token name);
 static DataDeskNode *ParseEnumBody            (ParseContext *context, Tokenizer *tokenizer, Token name);
@@ -814,7 +815,12 @@ ParseTypeUsage(ParseContext *context, Tokenizer *tokenizer)
     char *type_name_string = 0;
     int type_name_string_length = 0;
 
-    if(RequireToken(tokenizer, "struct", 0))
+    if(RequireToken(tokenizer, "class", 0))
+    {
+        //TODO: change struct_declaration to class declaration
+        struct_declaration = ParseClassBody(context, tokenizer, (Token){0});
+    }
+    else if(RequireToken(tokenizer, "struct", 0))
     {
         struct_declaration = ParseStructBody(context, tokenizer, (Token){0});
     }
@@ -895,11 +901,17 @@ ParseCode(ParseContext *context, Tokenizer *tokenizer)
             // NOTE(rjf): Constant/immutable things (structs/functions/etc.).
             if(RequireToken(tokenizer, "::", 0))
             {
+                // NOTE(dw): Class.
+                if(RequireToken(tokenizer, "class", 0))
+                {
+                    new_node = ParseClassBody(context, tokenizer, name);
+                }
 
                 // NOTE(rjf): Struct.
-                if(RequireToken(tokenizer, "struct", 0))
+                else if(RequireToken(tokenizer, "struct", 0))
                 {
                     new_node = ParseStructBody(context, tokenizer, name);
+
                 }
 
                 // NOTE(rjf): Union.
@@ -962,6 +974,7 @@ ParseCode(ParseContext *context, Tokenizer *tokenizer)
 
                 if(new_node != 0)
                 {
+
                     DataDeskNode *initialization = 0;
                     if(RequireToken(tokenizer, "=", 0))
                     {
@@ -996,7 +1009,7 @@ ParseCode(ParseContext *context, Tokenizer *tokenizer)
             }
 
         }
-        
+
         if(new_node == 0)
         {
             new_node = ParseExpression(context, tokenizer);
@@ -1020,6 +1033,7 @@ ParseCode(ParseContext *context, Tokenizer *tokenizer)
         {
             break;
         }
+        
     }
     while(token.type != TOKEN_invalid);
 
@@ -1061,6 +1075,7 @@ ParseDeclarationList(ParseContext *context, Tokenizer *tokenizer)
             *target = declaration;
             target = &(*target)->next;
 
+            /*Error Check*/
             if(!(TokenMatch(PeekToken(tokenizer), "}") || TokenMatch(PeekToken(tokenizer), ")")) &&
                !RequireToken(tokenizer, ";", 0) && !RequireToken(tokenizer, ",", 0))
             {
@@ -1115,6 +1130,32 @@ ParseIdentifierList(ParseContext *context, Tokenizer *tokenizer)
             break;
         }
     }
+    return root;
+}
+
+static DataDeskNode *
+ParseClassBody(ParseContext *context, Tokenizer *tokenizer, Token name)
+{
+    DataDeskNode *root = ParseContextAllocateNode(context);
+    root->type = DATA_DESK_NODE_TYPE_class_declaration;
+    root->string = name.string;
+    root->string_length = name.string_length;
+
+    if(!RequireToken(tokenizer, "{", 0))
+    {
+        ParseContextPushError(context, tokenizer, "Expected '{'.");
+        goto end_parse;
+    }
+
+    root->struct_declaration.first_member = ParseDeclarationList(context, tokenizer);
+
+    if(!RequireToken(tokenizer, "}", 0))
+    {
+        ParseContextPushError(context, tokenizer, "Expected '}'.");
+        goto end_parse;
+    }
+
+    end_parse:;
     return root;
 }
 

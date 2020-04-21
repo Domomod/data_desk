@@ -25,8 +25,9 @@ static DataDeskCustom
 DataDeskCustomLoad(char *custom_dll_path)
 {
     DataDeskCustom custom = {0};
-    
+
 #if BUILD_WIN32
+    Log("Trying to link custom layer dll (Windows");
     custom.custom_dll = LoadLibraryA(custom_dll_path);
     if(custom.custom_dll)
     {
@@ -36,6 +37,7 @@ DataDeskCustomLoad(char *custom_dll_path)
         custom.CleanUpCallback   = (void *)GetProcAddress(custom.custom_dll, "DataDeskCustomCleanUpCallback");
     }
 #elif BUILD_LINUX
+    Log("Trying to link custom layer dll: %s", custom_dll_path);
     custom.custom_dll = dlopen(custom_dll_path, RTLD_NOW);
     if(custom.custom_dll)
     {
@@ -43,6 +45,11 @@ DataDeskCustomLoad(char *custom_dll_path)
         custom.InitCallback      = dlsym(custom.custom_dll, "DataDeskCustomInitCallback"   );
         custom.ParseCallback     = dlsym(custom.custom_dll, "DataDeskCustomParseCallback"  );
         custom.CleanUpCallback   = dlsym(custom.custom_dll, "DataDeskCustomCleanUpCallback");
+    }
+    else
+    {
+
+        LogError("WARNING: Could not open custom dll, followin error occured: (dlerror) %s", dlerror());
     }
 #endif
     

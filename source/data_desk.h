@@ -2,7 +2,7 @@
 Data Desk
 
 Author  : Ryan Fleury
-Updated : 20 April 2020
+Updated : 14 February 2020
 License : MIT, at end of file.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
@@ -90,7 +90,8 @@ typedef void DataDeskCleanUpCallback(void);
 | in the following enum.
 */
 
-typedef enum DataDeskNodeType
+typedef enum DataDeskNodeType DataDeskNodeType;
+enum DataDeskNodeType
 {
     DATA_DESK_NODE_TYPE_invalid,
     
@@ -102,6 +103,7 @@ typedef enum DataDeskNodeType
     DATA_DESK_NODE_TYPE_binary_operator,
     
     DATA_DESK_NODE_TYPE_struct_declaration,
+    DATA_DESK_NODE_TYPE_class_declaration,
     DATA_DESK_NODE_TYPE_union_declaration,
     DATA_DESK_NODE_TYPE_enum_declaration,
     DATA_DESK_NODE_TYPE_flags_declaration,
@@ -110,24 +112,26 @@ typedef enum DataDeskNodeType
     DATA_DESK_NODE_TYPE_tag,
     DATA_DESK_NODE_TYPE_constant_definition,
     DATA_DESK_NODE_TYPE_procedure_header,
-} DataDeskNodeType;
+};
 
 // NOTE(rjf): The unary operator precedence table in UnaryOperatorPrecedence
 // must update to match this when this changes, and also the DataDeskGetUnaryOperatorString
 // procedure in this file.
-typedef enum DataDeskUnaryOperatorType
+typedef enum DataDeskUnaryOperatorType DataDeskUnaryOperatorType;
+enum DataDeskUnaryOperatorType
 {
     DATA_DESK_UNARY_OPERATOR_TYPE_invalid,
     DATA_DESK_UNARY_OPERATOR_TYPE_negative,
     DATA_DESK_UNARY_OPERATOR_TYPE_not,
     DATA_DESK_UNARY_OPERATOR_TYPE_bitwise_negate,
     DATA_DESK_UNARY_OPERATOR_TYPE_MAX
-} DataDeskUnaryOperatorType;
+};
 
 // NOTE(rjf): The binary operator precedence table in BinaryOperatorPrecedence
 // must update to match this when this changes, and also the DataDeskGetBinaryOperatorString
 // procedure in this file.
-typedef enum DataDeskBinaryOperatorType
+typedef enum DataDeskBinaryOperatorType DataDeskBinaryOperatorType;
+enum DataDeskBinaryOperatorType
 {
     DATA_DESK_BINARY_OPERATOR_TYPE_invalid,
     DATA_DESK_BINARY_OPERATOR_TYPE_add,
@@ -142,7 +146,7 @@ typedef enum DataDeskBinaryOperatorType
     DATA_DESK_BINARY_OPERATOR_TYPE_boolean_and,
     DATA_DESK_BINARY_OPERATOR_TYPE_boolean_or,
     DATA_DESK_BINARY_OPERATOR_TYPE_MAX
-} DataDeskBinaryOperatorType;
+};
 
 struct DataDeskNode
 {
@@ -164,20 +168,20 @@ struct DataDeskNode
     
     union
     {
-        struct
+        struct Identifier
         {
             DataDeskNode *declaration;
         }
         identifier;
         
-        struct
+        struct UnaryOperator
         {
             DataDeskUnaryOperatorType type;
             DataDeskNode *operand;
         }
         unary_operator;
         
-        struct
+        struct BinaryOperator
         {
             DataDeskBinaryOperatorType type;
             DataDeskNode *left;
@@ -185,38 +189,38 @@ struct DataDeskNode
         }
         binary_operator;
         
-        struct
+        struct StructDeclaration
         {
             DataDeskNode *first_member;
         }
         struct_declaration;
         
-        struct
+        struct UnionDeclaration
         {
             DataDeskNode *first_member;
         }
         union_declaration;
         
-        struct
+        struct EnumDeclaration
         {
             DataDeskNode *first_constant;
         }
         enum_declaration;
         
-        struct
+        struct FlagsDeclaration
         {
             DataDeskNode *first_flag;
         }
         flags_declaration;
         
-        struct
+        struct Declaration
         {
             DataDeskNode *type;
             DataDeskNode *initialization;
         }
         declaration;
         
-        struct
+        struct TypeUsage
         {
             int pointer_count;
             DataDeskNode *first_array_size_expression;
@@ -226,19 +230,19 @@ struct DataDeskNode
         }
         type_usage;
         
-        struct
+        struct Tag
         {
             DataDeskNode *first_tag_parameter;
         }
         tag;
         
-        struct
+        struct ConstantDefinition
         {
             DataDeskNode *expression;
         }
         constant_definition;
         
-        struct
+        struct ProcedureHeader
         {
             DataDeskNode *return_type;
             DataDeskNode *first_parameter;
@@ -654,7 +658,7 @@ _DataDeskFWriteGraphAsC(FILE *file, DataDeskNode *root, int follow_next, int nes
             }
             fprintf(file, "\n");
         }
-        
+
         switch(root->type)
         {
             case DATA_DESK_NODE_TYPE_identifier:
@@ -665,7 +669,7 @@ _DataDeskFWriteGraphAsC(FILE *file, DataDeskNode *root, int follow_next, int nes
                 fprintf(file, "%s", root->string);
                 break;
             }
-            
+
             case DATA_DESK_NODE_TYPE_unary_operator:
             {
                 fprintf(file, "(");
@@ -690,6 +694,22 @@ _DataDeskFWriteGraphAsC(FILE *file, DataDeskNode *root, int follow_next, int nes
                 break;
             }
             
+            case DATA_DESK_NODE_TYPE_class_declaration:
+            {
+                
+                fprintf(file, "class %s\n{",root->string);
+                
+                for(DataDeskNode *member = root->struct_declaration.first_member;
+                     member; member = member->next)
+                 {
+                     _DataDeskFWriteGraphAsC(file, member, 0, nest+1);
+                     fprintf(file, ";\n");
+                 }
+                fprintf(file, "};\n");
+                                
+                break;
+            }
+
             case DATA_DESK_NODE_TYPE_struct_declaration:
             {
                 if(nest == 0)
@@ -858,6 +878,7 @@ _DataDeskFWriteGraphAsC(FILE *file, DataDeskNode *root, int follow_next, int nes
                 fprintf(file, "#define %s (", root->string);
                 DataDeskFWriteGraphAsC(file, root->constant_definition.expression, 0);
                 fprintf(file, ")\n");
+                
                 break;
             }
             
@@ -888,6 +909,7 @@ _DataDeskFWriteGraphAsC(FILE *file, DataDeskNode *root, int follow_next, int nes
                 {
                     fprintf(file, "void");
                 }
+                
                 fprintf(file, ");\n");
                 break;
             }

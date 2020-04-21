@@ -54,7 +54,7 @@ ParseFile(ParseContext *context, char *file, char *filename)
     
     DataDeskNode *root = ParseCode(context, &tokenizer);
     PrintAndResetParseContextErrors(context);
-    
+
     // NOTE(rjf): ParseContextCleanUp shouldn't be called, because often time, code
     // will depend on ASTs persisting between files (which should totally work).
     // So, we won't clean up anything, and let the operating system do it ond
@@ -146,7 +146,7 @@ main(int argument_count, char **arguments)
                     }
                 }
             }
-            
+
             Log("Data Desk v" DATA_DESK_VERSION_STRING);
             
             // NOTE(rjf): Load custom code DLL if needed.
@@ -203,6 +203,8 @@ main(int argument_count, char **arguments)
                 ProcessParsedGraph(parsed_files[i].filename, parsed_files[i].root, &parse_context, custom);
             }
             
+
+
             if(custom.CleanUpCallback)
             {
                 custom.CleanUpCallback();
@@ -215,6 +217,19 @@ main(int argument_count, char **arguments)
     {
         LogError("USAGE: %s [-c|--custom <path to custom layer DLL>] [-l|--log] <files to process>",
                  arguments[0]);
+        #if BUILD_WIN32
+        
+        LogError("Windows build preprocessor option set succesfully.");
+
+        #elif BUILD_LINUX
+        LogError("Linux build preprocessor option set succesfully.");        
+
+        #else
+        LogError("WARNING: Build prerpocessor option not set. Linking custom layer will fail.");  
+
+        #endif
+
+
     }
     
     return 0;

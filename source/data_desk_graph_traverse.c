@@ -36,6 +36,11 @@ GenerateGraphNullTerminatedStrings(ParseContext *context, DataDeskNode *root)
                 GenerateGraphNullTerminatedStrings(context, root->binary_operator.right);
                 break;
             }
+            case DATA_DESK_NODE_TYPE_class_declaration:
+            {
+                GenerateGraphNullTerminatedStrings(context, root->struct_declaration.first_member);
+                break;
+            }
             case DATA_DESK_NODE_TYPE_struct_declaration:
             {
                 GenerateGraphNullTerminatedStrings(context, root->struct_declaration.first_member);
