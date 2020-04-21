@@ -695,8 +695,8 @@ _DataDeskFWriteGraphAsC(FILE *file, DataDeskNode *root, int follow_next, int nes
             }
             
             case DATA_DESK_NODE_TYPE_class_declaration:
-            {
-                
+            {                
+
                 fprintf(file, "class %s\n{",root->string);
                 
                 for(DataDeskNode *member = root->struct_declaration.first_member;
@@ -705,7 +705,12 @@ _DataDeskFWriteGraphAsC(FILE *file, DataDeskNode *root, int follow_next, int nes
                      _DataDeskFWriteGraphAsC(file, member, 0, nest+1);
                      fprintf(file, ";\n");
                  }
-                fprintf(file, "};\n");
+                fprintf(file, "}");
+                
+                if(nest == 0)
+                {
+                    fprintf(file, ";\n\n");
+                }
                                 
                 break;
             }
@@ -716,9 +721,10 @@ _DataDeskFWriteGraphAsC(FILE *file, DataDeskNode *root, int follow_next, int nes
                 {
                     fprintf(file, "typedef struct %s %s;\n", root->string, root->string);
                 }
-                
+
                 if(root->string)
                 {
+
                     fprintf(file, "struct %s\n{\n", root->string);
                 }
                 else
@@ -839,8 +845,11 @@ _DataDeskFWriteGraphAsC(FILE *file, DataDeskNode *root, int follow_next, int nes
             case DATA_DESK_NODE_TYPE_declaration:
             {
                 _DataDeskFWriteGraphAsC(file, root->declaration.type, 0, nest+1);
-                fprintf(file, "%s", root->string);
-                
+
+                if(root->string)
+                {
+                    fprintf(file, "%s", root->string);
+                }
                 for(DataDeskNode *array = root->declaration.type->type_usage.first_array_size_expression;
                     array;
                     array = array->next)

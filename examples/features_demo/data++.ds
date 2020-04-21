@@ -1,6 +1,8 @@
 
-Circle :: class
+b :: class
 {
-	x : float;
-	z : int;
+	a : class
+	{
+		
+	}
 };

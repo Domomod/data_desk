@@ -13,9 +13,12 @@ GenerateGraphNullTerminatedStrings(ParseContext *context, DataDeskNode *root)
     {
         if(root->string)
         {
+            printf("%d\n", root->string_length+1);
             char *new_string = ParseContextAllocateMemory(context, root->string_length+1);
+
             MemoryCopy(new_string, root->string, root->string_length);
             new_string[root->string_length] = 0;
+
             root->string = new_string;
             root->name_lowercase_with_underscores = ParseContextAllocateStringCopyLowercaseWithUnderscores(context, root->name);
             root->name_uppercase_with_underscores = ParseContextAllocateStringCopyUppercaseWithUnderscores(context, root->name);

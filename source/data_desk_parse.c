@@ -1048,6 +1048,17 @@ ParseDeclarationBody(ParseContext *context, Tokenizer *tokenizer, Token name)
     root->string = name.string;
     root->string_length = name.string_length;
     root->declaration.type = ParseTypeUsage(context, tokenizer);
+
+    if(root->declaration.type->type_usage.struct_declaration != 0
+    && root->declaration.type->type_usage.struct_declaration->type == DATA_DESK_NODE_TYPE_class_declaration)
+    {//NOTE(dpw) For nested class declarations store name in the type_class_declaration node instead of type_declaration node.
+        root->declaration.type->type_usage.struct_declaration->string = name.string;
+        root->declaration.type->type_usage.struct_declaration->string_length = name.string_length;
+
+        root->string = 0;
+        root->string_length = 0;
+    }
+
     return root;
 }
 

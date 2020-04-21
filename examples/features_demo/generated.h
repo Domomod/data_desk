@@ -1,4 +1,3 @@
-class Circle {
-  float x;
-  int z;
+class b {
+  class a {};
 };
